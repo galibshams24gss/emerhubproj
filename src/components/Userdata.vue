@@ -1,23 +1,22 @@
 <template>
 <div id="app">
-    <div class="flex">
-    <div class="w-1/5"></div>
-    <div class="w-3/5">
-    <div class="px-6 py-4">
-    <div class="font-bold text-xl mb-2">User Data</div>
-    <div v-if="state === 'synced'" class="text-green-700 text-base">
-      User Data is synced with Firestore
-    </div>
-    <div v-else-if="state === 'changed'" class="text-yellow-700 text-base">
-      There is change in data, it will sync with Firestore
-    </div>
-    <div v-else-if="state === 'error'" class="text-red-700 text-base">
-      Sorry, there is an error while storing data in Firestore
-    </div>
-    <div v-else-if="state === 'loading'" class="text-blue-700 text-base">
-      Data Loading...
-    </div>
-  </div>
+    <div class="flex mb-4">
+      <div class="w-1/2 h-100">
+        <div class="px-6 py-4">
+          <div class="font-bold text-xl mb-2">User Data</div>
+          <div v-if="state === 'synced'" class="text-green-700 text-base">
+            User Data is synced with Firestore
+          </div>
+          <div v-else-if="state === 'changed'" class="text-yellow-700 text-base">
+            There is change in data, it will sync with Firestore
+          </div>
+          <div v-else-if="state === 'error'" class="text-red-700 text-base">
+            Sorry, there is an error while storing data in Firestore
+          </div>
+          <div v-else-if="state === 'loading'" class="text-blue-700 text-base">
+            Data Loading...
+          </div>
+        </div>
 
   <div v-if="submitted === true" class="fixed z-10 inset-0 overflow-y-auto" id="dialog">
   <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -58,7 +57,7 @@
   </div>
 </div>
 
-  <form @submit.prevent="saveUser" @input="dataUpdate" ref="form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+  <form @submit.prevent="saveUser" @input="dataUpdate" ref="form" class="bg-white px-8 pt-6 pb-8 mb-4">
     <div class="mb-4">
       <label class="block text-gray-700 text-sm font-bold mb-2" for="user_id">
         User ID
@@ -91,7 +90,7 @@
     </div>
     <div class="flex items-center justify-between">
       <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
-        Submit
+        Save
       </button>
       <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" @click="backToOriginal" type="submit">
         Revert
@@ -103,9 +102,49 @@
       </a>
     </div>
   </form>
+      </div>
+      <div class="w-1/2 h-screen">
+
+        <div class="px-6 py-4">
+          <div class="font-bold text-xl mb-2">Store Data</div>
+          <div class="text-green-700 text-base">
+            Firestore data is displayed here
+          </div>
+        </div>
+        <form ref="form" class="bg-white px-8 pt-6 pb-8 mb-4">
+    <div class="mb-4">
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="user_id">
+        User ID
+      </label>
+      <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" v-model="storeData.user_id" id="username" type="text" placeholder="User ID" required>
     </div>
-    <div class="w-1/5"></div>
-  </div>
+    <div class="mb-4">
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
+        Full Name
+      </label>
+      <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" v-model="storeData.name" id="name" type="text" placeholder="Full Name" required>
+    </div>
+    <div class="mb-4">
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+        Email Address
+      </label>
+      <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" v-model="storeData.email" id="email" type="email" placeholder="Email Address">
+    </div>
+    <div class="mb-4">
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="dept">
+        Department
+      </label>
+      <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" v-model="storeData.dept" id="department" type="text" placeholder="Department">
+    </div>
+    <div class="mb-4">
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="position">
+        Position
+      </label>
+      <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" v-model="storeData.position" id="position" type="text" placeholder="Position">
+    </div>
+  </form>
+      </div>
+    </div>
 </div>
 </template>
 
@@ -126,15 +165,23 @@ export default class HelloWorld extends Vue {
   private state: string="loading"
   private errorMsg: string="Error"
   private points: number = 20
-  private originalData = {}
+  private storeData = {}
   private submitted: boolean = false
   private calcpoints: number = 0
+  private firebaseData= null
+
+  public firestore() {
+    return {
+      firebaseData: db.doc(docPath),
+    };
+  }
 
   public async saveUser() {
       await db.doc(docPath).set(
         this.formdata).then(
           docRef => {
         this.state = 'synced';
+        this.storeData = this.formdata;
 
         this.submitted = true;
 
@@ -147,9 +194,9 @@ export default class HelloWorld extends Vue {
         });
         const values = arr.length;
         const calculatedPoints = values*this.points;
-        //console.log('Data Completeion Percentage : '+ calculatedPoints + '%');
         this.calcpoints = calculatedPoints;
         })
+        
         .catch(error => {
         console.error('Error adding details: ', error)
         this.state = 'error';
@@ -164,7 +211,7 @@ export default class HelloWorld extends Vue {
       docRef.set(data)
     }
     this.formdata = data;
-    this.originalData = { ...data };
+    this.storeData = { ...data };
     this.state = 'synced';
 
     const newObj = this.formdata
@@ -176,7 +223,6 @@ export default class HelloWorld extends Vue {
     });
     const values = arr.length;
     const calculatedPoints = values*this.points;
-    //console.log('Data Completeion Percentage : '+ calculatedPoints + '%');
   }
 
   public dataUpdate() {
@@ -186,7 +232,7 @@ export default class HelloWorld extends Vue {
   }
 
   public debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
-  let timeoutID: number = 1500;
+  let timeoutID: number = 1000;
   return function(this: any, ...args: any[]) {
     this.saveUser;
     clearTimeout(timeoutID);
@@ -194,18 +240,19 @@ export default class HelloWorld extends Vue {
     } as F;
   }
 
-  public debouncedChange = debounce(this.saveUser, 1500);
+  public debouncedChange = debounce(this.saveUser, 1000);
 
   public backToOriginal(){
     this.state = 'revoked';
-    this.formdata = { ...this.originalData}
+    this.formdata = { ...this.storeData}
   }
 
   public close() {
     this.submitted = false;
+    this.state = 'synced';
   }
 
-  mounted() {
+  created() {
     this.prevData();
   }
 }
