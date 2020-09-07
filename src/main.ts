@@ -3,6 +3,8 @@ import App from './App.vue'
 import "./assets/styles/index.css"
 import router from './router'
 import store from './store'
+import { firestorePlugin } from 'vuefire'
+Vue.use(firestorePlugin)
 import { debounce } from 'debounce';
 //import "./assets/styles/index.css"
 Vue.config.productionTip = false

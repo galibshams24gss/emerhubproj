@@ -4,17 +4,20 @@
       <div class="w-1/2 h-100">
         <div class="px-6 py-4">
           <div class="font-bold text-xl mb-2">User Data</div>
-          <div v-if="state === 'synced'" class="text-green-700 text-base">
+          <div v-if="state === 'synced'" class="text-green-500 text-base">
             User Data is synced with Firestore
           </div>
-          <div v-else-if="state === 'changed'" class="text-yellow-700 text-base">
+          <div v-else-if="state === 'changed'" class="text-orange-500 text-base">
             There is change in data, it will sync with Firestore
           </div>
-          <div v-else-if="state === 'error'" class="text-red-700 text-base">
+          <div v-else-if="state === 'error'" class="text-red-600 text-base">
             Sorry, there is an error while storing data in Firestore
           </div>
-          <div v-else-if="state === 'loading'" class="text-blue-700 text-base">
+          <div v-else-if="state === 'loading'" class="text-blue-600 text-base">
             Data Loading...
+          </div>
+          <div v-else-if="state === 'autosaved'" class="text-teal-600 text-base">
+            Autosaved
           </div>
         </div>
 
@@ -107,7 +110,7 @@
 
         <div class="px-6 py-4">
           <div class="font-bold text-xl mb-2">Store Data</div>
-          <div class="text-green-700 text-base">
+          <div class="text-blue-500 text-base">
             Firestore data is displayed here
           </div>
         </div>
@@ -225,22 +228,32 @@ export default class HelloWorld extends Vue {
     const calculatedPoints = values*this.points;
   }
 
-  public dataUpdate() {
-    this.state = 'changed';
-    //this.saveUser;
-    this.debouncedChange
-  }
-
-  public debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
+  /*public debounce<F extends (...params: any[]) => void>(fn: F, delay: number) {
   let timeoutID: number = 1000;
   return function(this: any, ...args: any[]) {
+    this.storeData = this.formdata;
     this.saveUser;
     clearTimeout(timeoutID);
     timeoutID = window.setTimeout(() => fn.apply(this, args), delay);
     } as F;
+  }*/
+
+  public debouncedChange = debounce(
+    this.saveUser
+    , 2000);
+
+  public async autosave() {
+    await db.doc(docPath).set(this.formdata).then(
+          docRef => {
+        this.state = 'autosaved';
+        this.storeData = this.formdata;
+    })
   }
 
-  public debouncedChange = debounce(this.saveUser, 1000);
+  public dataUpdate() {
+    this.state = 'autosaved';
+    setTimeout(this.autosave, 2000)
+  }
 
   public backToOriginal(){
     this.state = 'revoked';
